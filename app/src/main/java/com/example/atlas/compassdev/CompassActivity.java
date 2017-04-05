@@ -5,7 +5,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.animation.Animation;
@@ -15,11 +14,9 @@ import android.widget.TextView;
 
 public class CompassActivity extends AppCompatActivity implements SensorEventListener {
 
-    private static final String TAG = "Compass";
     private SensorManager mSensorManager;
     private Sensor mAccelerometer;
     private Sensor mMagnetometer;
-    private Vibrator mVibrator;
     private float[] mGravityValues = new float[3];
     private float[] mGeomagneticValues = new float[3];
     private float[] mRotationMatrix = new float[9];
@@ -48,7 +45,6 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
         mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        mVibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
     }
 
     @Override
@@ -59,8 +55,8 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
     @Override
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_UI); // Active accelerometer listener
-        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_UI); //  Active magnetometer listener
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_UI); // Initialize accelerometer listener
+        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_UI); //  Initialize magnetometer listener
     }
 
     @Override
@@ -78,7 +74,6 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
     @Override
     protected void onStop() {
         super.onStop();
-
     }
 
     private void animateMovement() {
@@ -97,16 +92,6 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
 
         mCompassImg.startAnimation(an);
         currectAzimuth = azimuth;
-
-        updateAccelerometerValues();
-    }
-
-    public void updateScreenValues() {
-        TextView degree = (TextView) findViewById(R.id.input_z);
-        float azimuthInDegrees = (float) (Math.toDegrees(mOrientationMatrix[0])+360) % 360; // degrees of rotation about the -z axis
-
-
-        degree.setText(Float.toString(azimuthInDegrees));
     }
 
     public void updateAccelerometerValues() {
@@ -140,21 +125,17 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
                         * event.values[1];
                 mGeomagneticValues[2] = alpha * mGeomagneticValues[2] + (1 - alpha)
                         * event.values[2];
-                /*Log.e(TAG, Float.toString(event.values[0]));*/
-
             }
 
             boolean success = SensorManager.getRotationMatrix(mRotationMatrix, null, mGravityValues,
                     mGeomagneticValues);
 
-
             if (success) {
                 SensorManager.getOrientation(mRotationMatrix, mOrientationMatrix);
-                /*Log.d(TAG, "azimuth (rad): " + azimuth);*/
                 azimuth = (float) Math.toDegrees(mOrientationMatrix[0]); // orientation
                 azimuth = (azimuth + 360) % 360;
-                /*Log.d(TAG, "azimuth (deg): " + azimuth);*/
                 animateMovement();
+                updateAccelerometerValues();
             }
         }
     }

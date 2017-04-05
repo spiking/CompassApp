@@ -17,5 +17,4 @@ public class StartActivity extends AppCompatActivity {
         Intent intent = new Intent(this, CompassActivity.class);
         startActivity(intent);
     }
-
 }
