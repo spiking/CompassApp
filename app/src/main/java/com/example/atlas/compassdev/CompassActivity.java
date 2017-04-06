@@ -21,21 +21,22 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
     private float[] mGeomagneticValues = new float[3];
     private float[] mRotationMatrix = new float[9];
     private float[] mOrientationMatrix = new float[3];
-    private float azimuth = 0f;
-    private float currectAzimuth = 0;
+    private float mAzimuth = 0f;
+    private float mCurrentAzimuth = 0;
     private ImageView mCompassImg;
     private TextView x_value;
     private TextView y_value;
     private TextView z_value;
+    private final float alpha = 0.90f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         initiateSensorTypes();
         mCompassImg = (ImageView) findViewById(R.id.compass);
+
         x_value = (TextView) findViewById(R.id.input_x);
         y_value = (TextView) findViewById(R.id.input_y);
         z_value = (TextView) findViewById(R.id.input_z);
@@ -76,38 +77,16 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
         super.onStop();
     }
 
-    private void animateMovement() {
-
-        float azimuthInDegrees = (float) (Math.toDegrees(mOrientationMatrix[0])+360) % 360;
-
-        Log.i("Current degree", Float.toString(azimuthInDegrees));
-
-        Animation an = new RotateAnimation(-currectAzimuth, -azimuth,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f);
-
-        an.setDuration(250);
-        an.setRepeatCount(0);
-        an.setFillAfter(true);
-
-        mCompassImg.startAnimation(an);
-        currectAzimuth = azimuth;
-    }
-
-    public void updateAccelerometerValues() {
-        x_value.setText(Float.toString(mGravityValues[0]));
-        y_value.setText(Float.toString(mGravityValues[1]));
-        z_value.setText(Float.toString(mGravityValues[2]));
-    }
-
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        final float alpha = 0.90f;
-
         synchronized (this) {
 
+            // Low pass filter
+
             if (event.sensor == mAccelerometer) {
+
+                // If accelerometer values changed, update to new values
 
                 mGravityValues[0] = alpha * mGravityValues[0] + (1 - alpha)
                         * event.values[0];
@@ -119,6 +98,8 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
 
             if (event.sensor == mMagnetometer) {
 
+                // If magnetometer values changed, update to new values
+
                 mGeomagneticValues[0] = alpha * mGeomagneticValues[0] + (1 - alpha)
                         * event.values[0];
                 mGeomagneticValues[1] = alpha * mGeomagneticValues[1] + (1 - alpha)
@@ -127,17 +108,43 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
                         * event.values[2];
             }
 
+            // Fetch rotation matrix from accelerometer and magnetometer values
+
             boolean success = SensorManager.getRotationMatrix(mRotationMatrix, null, mGravityValues,
                     mGeomagneticValues);
 
             if (success) {
                 SensorManager.getOrientation(mRotationMatrix, mOrientationMatrix);
-                azimuth = (float) Math.toDegrees(mOrientationMatrix[0]); // orientation
-                azimuth = (azimuth + 360) % 360;
+                mAzimuth = (float) Math.toDegrees(mOrientationMatrix[0]);
+                mAzimuth = (mAzimuth + 360) % 360; // Orientation in degrees
                 animateMovement();
                 updateAccelerometerValues();
             }
         }
+    }
+
+    private void animateMovement() {
+
+        float mAzimuthInDegrees = (float) (Math.toDegrees(mOrientationMatrix[0])+360) % 360;
+
+        Log.i("Current degree", Float.toString(mAzimuthInDegrees));
+
+        Animation an = new RotateAnimation(-mCurrentAzimuth, -mAzimuth,
+                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+                0.5f);
+
+        an.setDuration(250);
+        an.setRepeatCount(0);
+        an.setFillAfter(true);
+
+        mCompassImg.startAnimation(an);
+        mCurrentAzimuth = mAzimuth;
+    }
+
+    public void updateAccelerometerValues() {
+        x_value.setText(Float.toString(mGravityValues[0]));
+        y_value.setText(Float.toString(mGravityValues[1]));
+        z_value.setText(Float.toString(mGravityValues[2]));
     }
 
 }
