@@ -1,16 +1,21 @@
 package com.example.atlas.compassdev;
 
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CompassActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -28,6 +33,8 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
     private TextView y_value;
     private TextView z_value;
     private final float alpha = 0.90f;
+    private Vibrator vibrator;
+    private Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,16 +43,26 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
 
         initiateSensorTypes();
         mCompassImg = (ImageView) findViewById(R.id.compass);
+        timer = new Timer();
 
         x_value = (TextView) findViewById(R.id.input_x);
         y_value = (TextView) findViewById(R.id.input_y);
         z_value = (TextView) findViewById(R.id.input_z);
+
+        // Setup timer
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                vibrate();
+            }
+        }, 0, 250);
     }
 
     public void initiateSensorTypes() {
         mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
     }
 
     @Override
@@ -145,6 +162,13 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
         x_value.setText(Float.toString(mGravityValues[0]));
         y_value.setText(Float.toString(mGravityValues[1]));
         z_value.setText(Float.toString(mGravityValues[2]));
+    }
+
+    // Vibrate if degree in +- 15 from north
+    public void vibrate() {
+        if ((mCurrentAzimuth >= 345 || mCurrentAzimuth <= 15)) {
+            vibrator.vibrate(10);
+        }
     }
 
 }
