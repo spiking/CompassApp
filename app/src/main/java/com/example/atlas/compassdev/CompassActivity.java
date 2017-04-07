@@ -35,6 +35,7 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
     private final float alpha = 0.90f;
     private Vibrator vibrator;
     private Timer timer;
+    private boolean vibrate = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +54,9 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                vibrate();
+                if(vibrate) {
+                    vibrate();
+                }
             }
         }, 0, 250);
     }
@@ -75,12 +78,14 @@ public class CompassActivity extends AppCompatActivity implements SensorEventLis
         super.onResume();
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_UI); // Initialize accelerometer listener
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_UI); //  Initialize magnetometer listener
+        vibrate = true;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mSensorManager.unregisterListener(this); // Stop receiving updates
+        vibrate = false;
     }
 
 
